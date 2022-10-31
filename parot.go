@@ -55,6 +55,7 @@ func handleShutdown(msg string, parotCtx *ParotProxyContext, server *http.Server
 	if err := server.Shutdown(ctx); err != nil {
 		log.Println("Error shutting down server:", err.Error())
 	}
+	parotCtx.requestHandler.close()
 	parotCtx.PrintSummary()
 }
 
@@ -70,6 +71,7 @@ func handleForceShutdown(msg string) {
 
 type ParotRequestHandler interface {
 	handleRequest(messageNumber int, timeDeltaMillis int64, messageBody []byte)
+	close()
 }
 
 type ParotProxyContext struct {
@@ -99,4 +101,8 @@ type LoggingReqHandler struct{}
 
 func (reqHandler LoggingReqHandler) handleRequest(messageNum int, time int64, req []byte) {
 	fmt.Printf("Msg # %d Time %d\n%s\n\n", messageNum, time, string(req))
+}
+
+func (reqHandler LoggingReqHandler) close() {
+	// no-op
 }
