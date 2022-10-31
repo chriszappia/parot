@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"parot/proxy/config"
+	"parot/proxy/zipRequestHandler"
 	"time"
 
 	"github.com/elazarl/goproxy"
@@ -21,10 +22,12 @@ func main() {
 		handleForceShutdown("Error loading configuration: " + err.Error())
 	}
 
+	zipRequestHandler := zipRequestHandler.NewZipRequestHandler("test.zip")
+
 	parotCtx := ParotProxyContext{
 		startTime:      time.Now().UnixMilli(),
 		requestHandled: 0,
-		requestHandler: LoggingReqHandler{},
+		requestHandler: zipRequestHandler,
 	}
 
 	proxy := goproxy.NewProxyHttpServer()
@@ -45,6 +48,10 @@ func main() {
 	handleShutdown("SIGINT Received", &parotCtx, &server)
 }
 
+func NewZipRequestHandler(s string) {
+	panic("unimplemented")
+}
+
 func handleShutdown(msg string, parotCtx *ParotProxyContext, server *http.Server) {
 	if msg != "" {
 		log.Println(msg)
@@ -55,7 +62,7 @@ func handleShutdown(msg string, parotCtx *ParotProxyContext, server *http.Server
 	if err := server.Shutdown(ctx); err != nil {
 		log.Println("Error shutting down server:", err.Error())
 	}
-	parotCtx.requestHandler.close()
+	parotCtx.requestHandler.Close()
 	parotCtx.PrintSummary()
 }
 
@@ -70,8 +77,8 @@ func handleForceShutdown(msg string) {
 }
 
 type ParotRequestHandler interface {
-	handleRequest(messageNumber int, timeDeltaMillis int64, messageBody []byte)
-	close()
+	HandleRequest(messageNumber int, timeDeltaMillis int64, messageBody []byte)
+	Close()
 }
 
 type ParotProxyContext struct {
@@ -87,7 +94,7 @@ func (proxyCtx *ParotProxyContext) Handle(req *http.Request, ctx *goproxy.ProxyC
 	if err != nil {
 		log.Fatal(err)
 	}
-	proxyCtx.requestHandler.handleRequest(proxyCtx.requestHandled, delta, res)
+	proxyCtx.requestHandler.HandleRequest(proxyCtx.requestHandled, delta, res)
 
 	return req, nil
 }
@@ -99,10 +106,10 @@ func (proxyCtx ParotProxyContext) PrintSummary() {
 
 type LoggingReqHandler struct{}
 
-func (reqHandler LoggingReqHandler) handleRequest(messageNum int, time int64, req []byte) {
+func (reqHandler LoggingReqHandler) HandleRequest(messageNum int, time int64, req []byte) {
 	fmt.Printf("Msg # %d Time %d\n%s\n\n", messageNum, time, string(req))
 }
 
-func (reqHandler LoggingReqHandler) close() {
+func (reqHandler LoggingReqHandler) Close() {
 	// no-op
 }
