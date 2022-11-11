@@ -2,6 +2,7 @@ package zipRequestHandler
 
 import (
 	"archive/zip"
+	"encoding/binary"
 	"fmt"
 	"os"
 )
@@ -27,7 +28,14 @@ func NewZipRequestHandler(filename string) ZipReqHandler {
 }
 
 func (reqHandler ZipReqHandler) HandleRequest(messageNum int, time int64, req []byte) {
-	zipFile, err := reqHandler.zipWriter.Create("Message" + fmt.Sprintf("%d", messageNum))
+	timebytes := make([]byte, 8)
+	binary.LittleEndian.PutUint64(timebytes, uint64(time))
+
+	header := zip.FileHeader{
+		Name:  "Message" + fmt.Sprintf("%d", messageNum),
+		Extra: timebytes,
+	}
+	zipFile, err := reqHandler.zipWriter.CreateHeader(&header)
 	if err != nil {
 		fmt.Println(err)
 	}

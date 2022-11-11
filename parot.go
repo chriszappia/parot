@@ -21,8 +21,7 @@ func main() {
 	if err != nil {
 		handleForceShutdown("Error loading configuration: " + err.Error())
 	}
-
-	zipRequestHandler := zipRequestHandler.NewZipRequestHandler("test.zip")
+	zipRequestHandler := zipRequestHandler.NewZipRequestHandler("parotdb")
 
 	parotCtx := ParotProxyContext{
 		startTime:      time.Now().UnixMilli(),
